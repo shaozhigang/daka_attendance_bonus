@@ -34,7 +34,7 @@
 |------|------|------|------|
 | **A** | 零开发配置（日历 + 快捷指令） | 0 天，今天可用 | [plan-a-zero-dev-setup.md](./plan-a-zero-dev-setup.md) |
 | **A-iOS** | iPhone 快速配置清单（推荐） | 30 分钟 | [plan-a-ios-quickstart.md](./plan-a-ios-quickstart.md) |
-| **B** | PWA 考勤看板 + 提醒 App | MVP 已搭建 | [plan-b-pwa-dashboard.md](./plan-b-pwa-dashboard.md) |
+| **B** | PWA 考勤看板 + 提醒 App | MVP 已搭建 | [plan-b-pwa-dashboard.md](./plan-b-pwa-dashboard.md) · [统计页改状态](./requirement-stats-status-edit.md) |
 
 ## 推荐使用顺序
 

@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { DayRecord, Settings } from '../types/attendance'
+import type { DayRecord, DayStatus, Settings } from '../types/attendance'
+import { getDayStatus, resolveDayStatus } from '../utils/attendance'
 import {
   countWorkdaysInMonth,
   formatDateKey,
+  getMonthDays,
   isWeekday,
   loadRecords,
   loadSettings,
   saveRecords,
   saveSettings,
 } from '../utils/date'
-
-function deriveStatus(record: DayRecord): DayRecord['status'] {
-  if (record.status === 'rest' || record.status === 'makeup') return record.status
-  const inOk = record.clockIn?.confirmed
-  const outOk = record.clockOut?.confirmed
-  if (inOk && outOk) return 'normal'
-  return record.status === 'missed' ? 'missed' : 'normal'
-}
 
 export function useAttendance() {
   const [settings, setSettingsState] = useState<Settings>(loadSettings)
@@ -25,7 +19,7 @@ export function useAttendance() {
 
   const todayRecord = useMemo(() => {
     const existing = records[todayKey]
-    if (existing) return { ...existing, status: deriveStatus(existing) }
+    if (existing) return { ...existing, status: resolveDayStatus(existing) }
     return {
       date: todayKey,
       status: isWeekday(new Date()) ? ('normal' as const) : ('rest' as const),
@@ -69,6 +63,44 @@ export function useAttendance() {
     })
   }, [records, todayKey, persistRecords])
 
+  const setDayStatus = useCallback(
+    (dateKey: string, status: DayStatus) => {
+      const current = records[dateKey] ?? { date: dateKey, status: 'normal' as const }
+      const now = new Date().toISOString()
+
+      let updated: DayRecord
+      switch (status) {
+        case 'normal':
+          updated = {
+            ...current,
+            status: 'normal',
+            clockIn: {
+              confirmed: true,
+              confirmedAt: current.clockIn?.confirmedAt ?? now,
+            },
+            clockOut: {
+              confirmed: true,
+              confirmedAt: current.clockOut?.confirmedAt ?? now,
+            },
+            manualOverride: true,
+          }
+          break
+        case 'makeup':
+          updated = { ...current, status: 'makeup', manualOverride: true }
+          break
+        case 'missed':
+          updated = { ...current, status: 'missed', manualOverride: true }
+          break
+        case 'rest':
+          updated = { date: dateKey, status: 'rest', manualOverride: true }
+          break
+      }
+
+      persistRecords({ ...records, [dateKey]: updated })
+    },
+    [records, persistRecords],
+  )
+
   const setSettings = useCallback((next: Settings) => {
     setSettingsState(next)
     saveSettings(next)
@@ -84,14 +116,15 @@ export function useAttendance() {
     let makeupDays = 0
     let missedDays = 0
 
-    Object.values(records).forEach((r) => {
-      const d = new Date(r.date)
-      if (d.getFullYear() !== year || d.getMonth() !== month) return
-      if (!isWeekday(d)) return
-      if (r.status === 'rest') return
-      if (r.status === 'makeup') makeupDays++
-      else if (r.status === 'missed') missedDays++
-      else if (r.clockIn?.confirmed && r.clockOut?.confirmed) fullDays++
+    getMonthDays(year, month).forEach((date) => {
+      if (!isWeekday(date)) return
+      if (formatDateKey(date) > todayKey) return
+
+      const status = getDayStatus(date, records)
+      if (status === 'rest' || status === 'pending') return
+      if (status === 'makeup') makeupDays++
+      else if (status === 'missed') missedDays++
+      else if (status === 'normal') fullDays++
     })
 
     const securedBonus = Math.round((fullDays / Math.max(workdays, 1)) * settings.bonusAmount)
@@ -127,7 +160,7 @@ export function useAttendance() {
 
       const key = formatDateKey(now)
       const r = records[key]
-      if (!r || r.status === 'rest') return
+      if (!r || r.status === 'rest' || r.manualOverride) return
       const complete = r.clockIn?.confirmed && r.clockOut?.confirmed
       if (!complete && r.status !== 'missed') {
         persistRecords({
@@ -150,6 +183,7 @@ export function useAttendance() {
     confirmClock,
     markRest,
     markMissed,
+    setDayStatus,
     stats,
     streak,
   }

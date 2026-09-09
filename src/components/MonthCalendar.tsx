@@ -1,10 +1,12 @@
-import { getMonthDays, isWeekday, formatDateKey } from '../utils/date'
+import { getMonthDays } from '../utils/date'
+import { getDayStatus, isDayEditable, type DisplayStatus } from '../utils/attendance'
 import type { DayRecord } from '../types/attendance'
 
 interface MonthCalendarProps {
   year: number
   month: number
   records: Record<string, DayRecord>
+  onDayClick?: (date: Date, status: DisplayStatus) => void
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -15,24 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-slate-100 ring-1 ring-slate-200',
 }
 
-function getDayStatus(date: Date, records: Record<string, DayRecord>): string {
-  if (!isWeekday(date)) return 'rest'
-  const key = formatDateKey(date)
-  const r = records[key]
-  if (!r) {
-    const todayKey = formatDateKey()
-    if (key > todayKey) return 'rest'
-    return 'pending'
-  }
-  if (r.status === 'rest') return 'rest'
-  if (r.status === 'makeup') return 'makeup'
-  if (r.status === 'missed') return 'missed'
-  if (r.clockIn?.confirmed && r.clockOut?.confirmed) return 'normal'
-  if (key === formatDateKey()) return 'pending'
-  return 'missed'
-}
-
-export function MonthCalendar({ year, month, records }: MonthCalendarProps) {
+export function MonthCalendar({ year, month, records, onDayClick }: MonthCalendarProps) {
   const days = getMonthDays(year, month)
   const firstDow = new Date(year, month, 1).getDay()
   const blanks = Array.from({ length: firstDow })
@@ -50,13 +35,19 @@ export function MonthCalendar({ year, month, records }: MonthCalendarProps) {
         ))}
         {days.map((date) => {
           const status = getDayStatus(date, records)
+          const editable = isDayEditable(date)
+          const filled = status === 'normal' || status === 'missed' || status === 'makeup'
+
           return (
             <div key={date.getDate()} className="flex flex-col items-center gap-0.5">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium ${STATUS_COLORS[status]} ${status === 'normal' || status === 'missed' || status === 'makeup' ? 'text-white' : 'text-slate-500'}`}
+              <button
+                type="button"
+                disabled={!editable}
+                onClick={() => editable && onDayClick?.(date, status)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition ${STATUS_COLORS[status]} ${filled ? 'text-white' : 'text-slate-500'} ${editable ? 'cursor-pointer active:scale-95' : 'cursor-default opacity-80'}`}
               >
                 {date.getDate()}
-              </div>
+              </button>
             </div>
           )
         })}
@@ -67,6 +58,9 @@ export function MonthCalendar({ year, month, records }: MonthCalendarProps) {
         <Legend color="bg-red-500" label="漏打" />
         <Legend color="bg-slate-200" label="休息" />
       </div>
+      {onDayClick && (
+        <p className="mt-2 text-xs text-slate-400">点击工作日可修改状态</p>
+      )}
     </div>
   )
 }

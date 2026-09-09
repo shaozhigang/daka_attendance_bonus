@@ -10,7 +10,16 @@ export interface DayRecord {
   clockIn?: ClockRecord
   clockOut?: ClockRecord
   status: DayStatus
+  /** 用户于统计页手动修正，22:00 审计不再覆盖 */
+  manualOverride?: boolean
 }
+
+export const DAY_STATUS_OPTIONS: { value: DayStatus; label: string; color: string }[] = [
+  { value: 'normal', label: '正常', color: 'bg-emerald-500' },
+  { value: 'makeup', label: '补卡', color: 'bg-amber-400' },
+  { value: 'missed', label: '漏打', color: 'bg-red-500' },
+  { value: 'rest', label: '休息', color: 'bg-slate-200' },
+]
 
 export interface ReminderStrategy {
   before20: boolean

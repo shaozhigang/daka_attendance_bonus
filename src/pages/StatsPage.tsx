@@ -1,9 +1,33 @@
+import { useState } from 'react'
+import { DayStatusSheet } from '../components/DayStatusSheet'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { useAttendance } from '../hooks/useAttendance'
+import type { DayStatus } from '../types/attendance'
+import type { DisplayStatus } from '../utils/attendance'
+import { formatDateKey } from '../utils/date'
 
 export function StatsPage() {
-  const { records, stats } = useAttendance()
+  const { records, stats, setDayStatus } = useAttendance()
   const now = new Date()
+  const [editingDate, setEditingDate] = useState<Date | null>(null)
+  const [editingStatus, setEditingStatus] = useState<DisplayStatus | null>(null)
+
+  const handleDayClick = (date: Date, status: DisplayStatus) => {
+    setEditingDate(date)
+    setEditingStatus(status)
+  }
+
+  const handleStatusSelect = (status: DayStatus) => {
+    if (!editingDate) return
+    setDayStatus(formatDateKey(editingDate), status)
+    setEditingDate(null)
+    setEditingStatus(null)
+  }
+
+  const handleClose = () => {
+    setEditingDate(null)
+    setEditingStatus(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -15,7 +39,12 @@ export function StatsPage() {
       </header>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-emerald-100">
-        <MonthCalendar year={now.getFullYear()} month={now.getMonth()} records={records} />
+        <MonthCalendar
+          year={now.getFullYear()}
+          month={now.getMonth()}
+          records={records}
+          onDayClick={handleDayClick}
+        />
       </section>
 
       <section className="grid grid-cols-3 gap-3">
@@ -35,6 +64,15 @@ export function StatsPage() {
           漏打 1 次即失去 ¥1000 全勤奖，务必每天 2 次都确认
         </p>
       </section>
+
+      {editingDate && editingStatus && (
+        <DayStatusSheet
+          date={editingDate}
+          currentStatus={editingStatus}
+          onSelect={handleStatusSelect}
+          onClose={handleClose}
+        />
+      )}
     </div>
   )
 }
