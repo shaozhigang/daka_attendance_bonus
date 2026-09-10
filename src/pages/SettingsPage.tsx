@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { AppUpdateSection } from '../components/AppUpdateSection'
 import type { Settings } from '../types/attendance'
@@ -88,6 +89,17 @@ export function SettingsPage() {
           onChange={(v) => updateStrategy('auditAt22', v)}
         />
       </section>
+
+      <Link
+        to="/eye-care"
+        className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm ring-1 ring-sky-100 active:bg-sky-50/50"
+      >
+        <div>
+          <p className="text-sm font-medium text-slate-700">👁️ 用眼守护</p>
+          <p className="mt-0.5 text-xs text-slate-400">间隔、静默时段等护眼设置</p>
+        </div>
+        <span className="text-slate-300">›</span>
+      </Link>
 
       <AppUpdateSection />
 

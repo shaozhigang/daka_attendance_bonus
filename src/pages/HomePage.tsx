@@ -1,14 +1,18 @@
 import { BonusProgress } from '../components/BonusProgress'
+import { EyeCareEntryCard } from '../components/EyeCareEntryCard'
 import { NotificationBanner } from '../components/NotificationBanner'
 import { StreakBadge } from '../components/StreakBadge'
 import { TodayStatusCard } from '../components/TodayStatusCard'
+import { useEyeCareContext } from '../contexts/EyeCareContext'
 import { useAttendance } from '../hooks/useAttendance'
 import { useNotifications } from '../hooks/useNotifications'
 import { formatDisplayDate, getUpcomingReminders } from '../utils/date'
 
 export function HomePage() {
   const { settings, todayRecord, confirmClock, markRest, stats, streak } = useAttendance()
-  const { permission, requestPermission } = useNotifications(settings.reminderEnabled)
+  const eyeCare = useEyeCareContext()
+  const notifyEnabled = settings.reminderEnabled || eyeCare.settings.enabled
+  const { permission, requestPermission } = useNotifications(notifyEnabled)
   const upcoming = getUpcomingReminders()
   const isRest = todayRecord.status === 'rest'
 
@@ -51,6 +55,16 @@ export function HomePage() {
           />
         </div>
       )}
+
+      <EyeCareEntryCard
+        enabled={eyeCare.settings.enabled}
+        completedToday={eyeCare.completedToday}
+        targetToday={eyeCare.targetToday}
+        countdown={eyeCare.countdown}
+        due={eyeCare.due}
+        paused={eyeCare.paused}
+        quiet={eyeCare.quiet}
+      />
 
       <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-emerald-100">
         <h2 className="mb-2 text-sm font-medium text-slate-700">📋 今日待提醒</h2>
