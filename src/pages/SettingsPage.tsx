@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AppUpdateSection } from '../components/AppUpdateSection'
 import type { Settings } from '../types/attendance'
 import { useAttendance } from '../hooks/useAttendance'
 
@@ -87,6 +88,8 @@ export function SettingsPage() {
           onChange={(v) => updateStrategy('auditAt22', v)}
         />
       </section>
+
+      <AppUpdateSection />
 
       <section className="rounded-2xl bg-emerald-50 p-4 text-xs leading-relaxed text-emerald-800 ring-1 ring-emerald-100">
         <p className="font-medium">iOS 用户必读</p>
